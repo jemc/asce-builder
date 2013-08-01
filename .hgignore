@@ -1,2 +1,3 @@
-^rails
+^rails.git$
+^activesupport-core-ext$
 sublime-[^\.]*$
