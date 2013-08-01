@@ -76,18 +76,22 @@ def chosen_git_releases
   File.read($release_config_path).split(/\r?\n/) & git_releases
 end
 
-task :fetch do
-  p chosen_git_releases
-  for release in git_releases
-    puts "fetch #{release.split('/').join(' ')}"
+def ignored_git_releases
+  `touch #{$release_config_path}` unless File.file? $release_config_path
+  git_releases - File.read($release_config_path).split(/\r?\n/)
+end
+
+def fetch_git_releases
+  for release in chosen_git_releases
+    puts "Fetching #{release}"
+    puts git "fetch #{release.split('/').join(' ')}", :pipe
   end
 end
 
 task :releases         do puts git_releases         end
-
 task :chosen_releases  do puts chosen_git_releases  end
-
 task :ignored_releases do puts ignored_git_releases end
+task :fetch            do      fetch_git_releases   end
 
 task :checkout do
   git "fetch   origin 4-0-stable #{git_refs.stable.last[0]}"
