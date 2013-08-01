@@ -1,9 +1,16 @@
 
-task :default => [:releases]
+task :default => [:fetch]
+
+def relative_path(p)
+  File.expand_path(p, File.dirname(__FILE__))
+end
 
 $upstream_git_path = 'git@github.com:rails/rails.git'
 $pristine_git      = 'rails.git'
-$pristine_git_path = File.expand_path($pristine_git, File.dirname(__FILE__))
+$pristine_git_path = relative_path $pristine_git
+
+$release_config       = 'cfg/releases'
+$release_config_path  = relative_path $release_config
 
 def git(cmd, *flags)
   gitflags = "--git-dir #{File.join($pristine_git, '.git')}"
@@ -15,18 +22,41 @@ def git(cmd, *flags)
   end
 end
 
+def git_clone
+  exec "git clone '#{$upstream_git_path}' '#{$pristine_git}'" \
+    unless File.directory? $pristine_git_path \
+    and    File.directory? File.join($pristine_git_path, '.git')
+end
+
+# def git_refs
+#   ary = (git "show-ref", :pipe).scan(/([^ ]+) ([^\n]+)\n/)
+#                                .map{ |a| a.reverse }
+#                                .sort
+  
+#   # Add ability to easily select matching branches with method_missing
+#   class << ary
+#     def stable
+#       self.matching(/remotes.*stable/)
+#     end
+#     def matching(re)
+#       self.select{|x| x[0]=~re}
+#     end
+#     def method_missing(meth, *args, &block)
+#       result = self.matching(/#{meth}/)
+#       result.empty? ? super : result
+#     end
+#   end
+  
+#   ary
+# end
+
 def git_branches
-  ary = (git "show-ref", :pipe).scan(/([^ ]+) ([^\n]+)\n/)
-                               .map{ |a| a.reverse }
-                               .sort
+  ary = (git "branch -r", :pipe).split(/\r?\n/).map { |x| x.gsub(/^\s*/,'') }
   
   # Add ability to easily select matching branches with method_missing
   class << ary
-    def stable
-      self.matching(/remotes.*stable/)
-    end
     def matching(re)
-      self.select{|x| x[0]=~re}
+      self.select{|x| x=~re}
     end
     def method_missing(meth, *args, &block)
       result = self.matching(/#{meth}/)
@@ -37,26 +67,31 @@ def git_branches
   ary
 end
 
-def git_clone
-  exec "git clone '#{$upstream_git_path}' '#{$pristine_git}'" \
-    unless File.directory? $pristine_git_path \
-    and    File.directory? File.join($pristine_git_path, '.git')
-end
-
 def git_releases
-  git_branches.stable.map { |x| x[0].match(/(.-.)-stable/)[1] }
+  result = git_branches.stable.reverse
 end
 
-# git "checkout master"
-# git "pull #{git_branches.stable.last[0]}"
-
-task :releases do
-  puts git_branches.matching(/remotes.*stable/)
-                   .map { |x| x[0].match(/(.-.)-stable/)[1] }
+def chosen_git_releases
+  `touch #{$release_config_path}` unless File.file? $release_config_path
+  File.read($release_config_path).split(/\r?\n/) & git_releases
 end
+
+task :fetch do
+  p chosen_git_releases
+  for release in git_releases
+    puts "fetch #{release.split('/').join(' ')}"
+  end
+end
+
+task :releases         do puts git_releases         end
+
+task :chosen_releases  do puts chosen_git_releases  end
+
+task :ignored_releases do puts ignored_git_releases end
 
 task :checkout do
-  git "checkout #{git_branches.stable.last[0]}"
+  git "fetch   origin 4-0-stable #{git_refs.stable.last[0]}"
+  git "checkout #{git_refs.stable.last[0]}"
 end
 
 # task :hg_convert do
