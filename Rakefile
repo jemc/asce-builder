@@ -1,5 +1,5 @@
 
-task :default => [:gemspec]
+task :default => [:build_all]
 
 
 
@@ -133,7 +133,15 @@ rake_methods do
   end
   
   def rake_build
-    `cd #{$dest_path}; gem build 'activesupport-core-ext.gemspec'`
+    `cd #{$dest_path}; gem build 'activesupport-core-ext.gemspec'; mv *.gem #{File.dirname(__FILE__)}`
+  end
+  
+  def rake_clean
+    `rm -rf #{$dest_path}`
+  end
+  
+  def rake_clean_pristine
+    `rm -rf #{$pristine_git}`
   end
   
   def rake_build_all
@@ -142,10 +150,12 @@ rake_methods do
     rake_fetch_releases
     for release in rake_chosen_releases
       checkout release
+      rake_clean
       rake_copy
       rake_gemspec
       rake_build
     end
+    
   end
   
 end
