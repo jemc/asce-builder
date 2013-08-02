@@ -123,6 +123,10 @@ rake_methods do
     version = File.read($version_file_path).strip
     gemspec.gsub!(/^\s*(version\s*=\s*)([^\n]*\n)/, '\1\''+version+'\''+"\n")
     
+    gemspec.gsub!(/(s.(?:summary|description)\s*=\s*)'[^']*'/, '\1'+\
+      "'Only the core extensions of activesupport, "\
+      "extracted directly from the Rails framework'")
+    
     File.write(File.join($dest_path, 'activesupport-core-ext.gemspec'), gemspec)
     
     gemspec
