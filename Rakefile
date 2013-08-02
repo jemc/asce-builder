@@ -152,7 +152,7 @@ rake_methods do
   end
   
   def rake_build
-    `gem build #{File.join($dest_path, 'activesupport-core-ext.gemspec')}`
+    `cd #{$dest_path}; gem build 'activesupport-core-ext.gemspec'`
   end
   
   def rake_build_all
@@ -160,9 +160,7 @@ rake_methods do
     rake_clone
     rake_fetch_releases
     for release in rake_chosen_releases
-      puts "blofri"
       checkout release
-      puts "heyo"
       rake_copy
       rake_gemspec
       rake_build
