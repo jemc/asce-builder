@@ -18,11 +18,14 @@ $dest_lib_path = File.join($dest_path,'lib')
 
 $release_config       = 'cfg/releases'
 $release_config_path  = relative_path $release_config
+$tracer_rb            = 'cfg/trace_requires.rb'
+$tracer_rb_path       = relative_path $release_config
 
 $version_file = 'RAILS_VERSION'
 $version_file_path = File.join($pristine_git_path, $version_file)
 $gemspec_file = 'activesupport/activesupport.gemspec'
 $gemspec_file_path = File.join($pristine_git_path, $gemspec_file)
+
 
 $verbose = true
 
@@ -98,7 +101,7 @@ rake_methods do
   nil end
   
   def rake_trace_requires
-    $require_list = Marshal.load(`ruby trace_requires.rb '#{$pristine_git_lib_path}'`)
+    $require_list = Marshal.load(`ruby '#{tracer_rb_path}' '#{$pristine_git_lib_path}'`)
   end
   
   def rake_copy
