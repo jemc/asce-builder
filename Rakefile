@@ -135,7 +135,7 @@ rake_methods do
   end
   
   def checkout (release)
-    exec "cd #{$pristine_git_path}; git checkout #{release} -f"
+    `cd #{$pristine_git_path}; git checkout #{release} -f; sleep 1.0`
   end
   
   def rake_gemspec
@@ -160,7 +160,9 @@ rake_methods do
     rake_clone
     rake_fetch_releases
     for release in rake_chosen_releases
+      puts "blofri"
       checkout release
+      puts "heyo"
       rake_copy
       rake_gemspec
       rake_build
