@@ -28,20 +28,6 @@ $verbose = true
 
 
 
-
-# Patch kernel require to detect as files get required, used in analyze method
-module Kernel
-  def require_and_note(string)
-    $require_list ||= []
-    $require_list << string
-    require_original(string)
-  end
-  
-  alias_method :require_original, :require
-  alias_method :require, :require_and_note
-  
-end
-
 def rake_methods
   the_methods = private_methods
   yield
@@ -112,16 +98,7 @@ rake_methods do
   nil end
   
   def rake_trace_requires
-    $LOAD_PATH.unshift($pristine_git_lib_path)
-    $require_list = []
-    require 'active_support/core_ext'
-    
-    $require_list.uniq!
-                 .map! { |path| File.expand_path(path+'.rb', $pristine_git_lib_path) }
-                 .select! { |path| File.file? path }
-                 .sort!
-    
-    $require_list
+    $require_list = Marshal.load(`ruby trace_requires.rb '#{$pristine_git_lib_path}'`)
   end
   
   def rake_copy
