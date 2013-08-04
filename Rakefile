@@ -27,6 +27,9 @@ $gemspec_file = 'activesupport/activesupport.gemspec'
 $gemspec_file_path = File.join($pristine_git_path, $gemspec_file)
 
 
+$require_list    = []
+$additional_list = []
+
 $verbose = true
 
 
@@ -105,7 +108,8 @@ rake_methods do
   end
   
   def rake_copy
-    for path in rake_trace_requires
+    rake_gemspec
+    for path in rake_trace_requires+
       newdir = File.dirname(path.gsub($pristine_git_lib_path,$dest_lib_path))
       puts path.gsub($pristine_git_lib_path,'') if $verbose
       `mkdir -p #{newdir}`
@@ -129,6 +133,13 @@ rake_methods do
     gemspec.gsub!(/(s.(?:summary|description)\s*=\s*)'[^']*'/, '\1'+\
       "'Only the core extensions of activesupport, "\
       "extracted directly from the Rails framework'")
+    
+    wd = Dir.getwd
+    Dir.chdir(File.dirname($gemspec_file_path))
+    $additional_list = eval("Dir['CHANGELOG.md', 'MIT-LICENSE', 'README.rdoc', 'lib/**/*']")
+      .reject {|x| x=~/(\.rb$)/ or x=~/^lib/}
+      .map {|x| File.expand_path(x)}
+    Dir.chdir(wd)
     
     File.write(File.join($dest_path, 'activesupport-core-ext.gemspec'), gemspec)
     
@@ -154,8 +165,8 @@ rake_methods do
     for release in rake_chosen_releases
       checkout release
       rake_clean
-      rake_copy
       rake_gemspec
+      rake_copy
       rake_build
     end
     
