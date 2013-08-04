@@ -11,6 +11,8 @@ $upstream_git_path     = 'git@github.com:rails/rails.git'
 $pristine_git          = 'rails.git'
 $pristine_git_path     = relative_path $pristine_git
 $pristine_git_lib_path = File.join($pristine_git_path,'activesupport','lib')
+$pristine_git_core_ext_path = \
+               File.join($pristine_git_lib_path,'active_support','core_ext')
 
 $dest          = 'activesupport-core-ext'
 $dest_path     = relative_path $dest
@@ -108,15 +110,17 @@ rake_methods do
   end
   
   def rake_copy
+    core_requires = Dir[File.join("#{$pristine_git_core_ext_path}",'**','*')]\
+                    .reject {|x| File.directory?(x) }
     rake_gemspec
-    for path in rake_trace_requires+$additional_list
+    rake_trace_requires
+    for path in (core_requires+$require_list+$additional_list).uniq.sort
       newdir = File.dirname(path.gsub($pristine_git_lib_path, $dest_lib_path)
                                 .gsub($pristine_git_path, $dest_path))
       puts path.gsub($pristine_git_path,'') if $verbose
       `mkdir -p #{newdir}`
       `cp #{path} #{newdir}`
     end
-    nil
   end
   
   def checkout (release)
@@ -137,9 +141,10 @@ rake_methods do
     
     wd = Dir.getwd
     Dir.chdir(File.dirname($gemspec_file_path))
-    $additional_list = eval("Dir['CHANGELOG.md', 'MIT-LICENSE', 'README.rdoc', 'lib/**/*']")
+    $additional_list = eval(gemspec.match(/s.files\s*=\s*(.*)\n/)[1])
       .reject {|x| x=~/(\.rb$)/ or x=~/^lib/}
       .map {|x| File.expand_path(x)}
+    p $additional_list
     Dir.chdir(wd)
     
     `mkdir -p #{$dest_path}`
@@ -148,6 +153,7 @@ rake_methods do
     File.write(File.join($dest_path, 'activesupport-core-ext.gemspec'), gemspec)
     
     gemspec
+    nil
   end
   
   def rake_build
