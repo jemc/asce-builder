@@ -19,7 +19,7 @@ $dest_lib_path = File.join($dest_path,'lib')
 $release_config       = 'cfg/releases'
 $release_config_path  = relative_path $release_config
 $tracer_rb            = 'cfg/trace_requires.rb'
-$tracer_rb_path       = relative_path $release_config
+$tracer_rb_path       = relative_path $tracer_rb
 
 $version_file = 'RAILS_VERSION'
 $version_file_path = File.join($pristine_git_path, $version_file)
@@ -104,14 +104,15 @@ rake_methods do
   nil end
   
   def rake_trace_requires
-    $require_list = Marshal.load(`ruby '#{tracer_rb_path}' '#{$pristine_git_lib_path}'`)
+    $require_list = Marshal.load(`ruby '#{$tracer_rb_path}' '#{$pristine_git_lib_path}'`)
   end
   
   def rake_copy
     rake_gemspec
-    for path in rake_trace_requires+
-      newdir = File.dirname(path.gsub($pristine_git_lib_path,$dest_lib_path))
-      puts path.gsub($pristine_git_lib_path,'') if $verbose
+    for path in rake_trace_requires+$additional_list
+      newdir = File.dirname(path.gsub($pristine_git_lib_path, $dest_lib_path)
+                                .gsub($pristine_git_path, $dest_path))
+      puts path.gsub($pristine_git_path,'') if $verbose
       `mkdir -p #{newdir}`
       `cp #{path} #{newdir}`
     end
@@ -141,12 +142,16 @@ rake_methods do
       .map {|x| File.expand_path(x)}
     Dir.chdir(wd)
     
+    `mkdir -p #{$dest_path}`
+    `touch #{File.join($dest_path, 'activesupport-core-ext.gemspec')}`
+    
     File.write(File.join($dest_path, 'activesupport-core-ext.gemspec'), gemspec)
     
     gemspec
   end
   
   def rake_build
+    puts "\nBuilding gem..."
     `cd #{$dest_path}; gem build 'activesupport-core-ext.gemspec'; mv *.gem #{File.dirname(__FILE__)}`
   end
   
@@ -170,6 +175,6 @@ rake_methods do
       rake_build
     end
     
-  end
+  nil end
   
 end
