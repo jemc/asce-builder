@@ -17,7 +17,12 @@ end
 
 $LOAD_PATH.unshift($pristine_git_lib_path)
 $require_list = []
+
+# require the parent file which loads child files
 require 'active_support/core_ext'
+# some additional parts of activesupport that prove troublesome if left out
+require 'active_support/json'
+
 
 $require_list.uniq!
              .map! { |path| File.expand_path(path+'.rb', $pristine_git_lib_path) }
